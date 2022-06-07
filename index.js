@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const morgan = require('morgan')
@@ -12,6 +13,8 @@ const cors = require('cors')
 app.use(cors())
 
 app.use(express.static('build'))
+
+const Person = require('./models/person')
 
 let persons = [
     {
@@ -47,10 +50,24 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
+  Person.find({}).then(p=> {
+    response.json(p)
+  })
+  {/*
   response.json(persons)
+  */}
 })
 
 app.get('/api/persons/:id', (request, response) => {
+  Person.findById(request.params.id).then(person => {
+    if (person) {
+      response.json(person)
+    } else {
+      response.status(404).end()
+    }
+  })
+  .catch(error => next(error))
+  {/*
   const id = Number(request.params.id)
   const person = persons.find(person => person.id === id)
   if (person) {
@@ -58,6 +75,7 @@ app.get('/api/persons/:id', (request, response) => {
   } else {
     response.status(404).end()
   }
+  */}
 })
 
 const generateId = () => {
@@ -74,26 +92,35 @@ app.post('/api/persons', (request, response) => {
       error: 'name or number is missing'
     })
   }
-
-  if (persons.find(person => person.name === body.name) != undefined) {
-    return response.status(400).json({
-      error: 'name must be unique'
+  Person.findOneAndUpdate({ name: body.name}, {number:body.number}, {new:true})
+    .then(target => {
+      console.log('post find same name, will update number under the name')
+      if (target != undefined) {
+        console.log(target)
+      } else {
+        const person = new Person({
+          name : body.name,
+          number : body.number,
+          id : generateId()
+        })
+        person.save().then(savedPerson => {
+          response.json(savedPerson)
+        })
+      }
     })
-  }
-    
-  const person = {
-    name : body.name,
-    number : body.number,
-    id : generateId()
-  }
-  persons = persons.concat(person)
-  response.json(person)
 })
 
 app.delete('/api/persons/:id', (request, response) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+  {/*
   const id = Number(request.params.id)
   persons = persons.filter(p => p.id !== id)
   response.status(204).end()
+  */}
 })
 
 app.get('/info', (request, response) => {
@@ -103,7 +130,7 @@ app.get('/info', (request, response) => {
     `)
         
 })
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
