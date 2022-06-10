@@ -15,10 +15,10 @@ const personSchema = new mongoose.Schema({
 })
 
 const Person = mongoose.model('Person', personSchema)
-if (process.argv.length == 3) {
+if (process.argv.length === 3) {
   mongoose
     .connect(url)
-    .then((result) => {
+    .then(() => {
       console.log('phonebook')
 
       Person.find({}).then(result => {
@@ -32,12 +32,12 @@ if (process.argv.length == 3) {
     .catch((err) => console.log(err))
 }
 
-if (process.argv.length == 5) {
+if (process.argv.length === 5) {
   const p_name = process.argv[3]
   const p_number = process.argv[4]
   mongoose
     .connect(url)
-    .then((result) => {
+    .then(() => {
       console.log('connected')
 
       const person = new Person({
